@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>카페 메뉴 관리</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f1eb;
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+h1 { color: #59412f; }
+section {
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+}
+input, select, button {
+  padding: 10px;
+  margin: 4px;
+}
+button {
+  background: #76543c;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.delete { background: #c74848; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+}
+th { background: #e9ded1; }
+.edit-row { display: none; }
+</style>
+</head>
+<body>
+
+<h1>☕ 카페 메뉴 관리 시스템</h1>
+
+<section>
+<h2>메뉴 검색 및 조회</h2>
+<select id="category" onchange="filterMenus()">
+  <option value="전체">전체</option>
+  <option>커피</option>
+  <option>에이드</option>
+  <option>스무디</option>
+  <option>티</option>
+  <option>디저트</option>
+</select>
+<input id="search" placeholder="메뉴 이름 검색"
+       oninput="filterMenus()">
+<button onclick="resetFilter()">전체 조회</button>
+</section>
+
+<section>
+<h2>새 메뉴 추가</h2>
+<form action="/menus/add" method="POST">
+  <input name="name" placeholder="메뉴 이름" required>
+  <input name="price" type="number" min="0"
+         placeholder="가격" required>
+  <select name="category">
+    <option>커피</option>
+    <option>에이드</option>
+    <option>스무디</option>
+    <option>티</option>
+    <option>디저트</option>
+  </select>
+  <button type="submit">메뉴 추가</button>
+</form>
+</section>
+
+<section>
+<h2>전체 메뉴 목록</h2>
+<table>
+<thead>
+<tr>
+  <th>번호</th>
+  <th>메뉴 이름</th>
+  <th>가격</th>
+  <th>카테고리</th>
+  <th>관리</th>
+</tr>
+</thead>
+<tbody>
+<% menus.forEach(menu => { %>
+<tr class="menu-row"
+    data-category="<%= menu.category %>"
+    data-name="<%= menu.name %>">
+  <td><%= menu.id %></td>
+  <td><%= menu.name %></td>
+  <td><%= Number(menu.price).toLocaleString() %>원</td>
+  <td><%= menu.category %></td>
+  <td>
+    <button onclick="toggleEdit(<%= menu.id %>)">
+      수정
+    </button>
+    <form action="/menus/delete/<%= menu.id %>"
+          method="POST" style="display:inline"
+          onsubmit="return confirm('정말 삭제할까요?')">
+      <button class="delete">삭제</button>
+    </form>
+  </td>
+</tr>
+
+<tr id="edit-<%= menu.id %>" class="edit-row">
+<td colspan="5">
+<form action="/menus/update/<%= menu.id %>" method="POST">
+  <input name="name" value="<%= menu.name %>" required>
+  <input name="price" type="number" min="0"
+         value="<%= menu.price %>" required>
+  <select name="category">
+    <% ['커피','에이드','스무디','티','디저트'].forEach(c => { %>
+      <option value="<%= c %>"
+        <%= menu.category === c ? 'selected' : '' %>>
+        <%= c %>
+      </option>
+    <% }) %>
+  </select>
+  <button type="submit">저장</button>
+</form>
+</td>
+</tr>
+<% }) %>
+</tbody>
+</table>
+</section>
+
+<script>
+function filterMenus() {
+  const category = document.getElementById("category").value;
+  const search = document.getElementById("search")
+    .value.toLowerCase();
+
+  document.querySelectorAll(".menu-row").forEach(row => {
+    const matchCategory =
+      category === "전체" || row.dataset.category === category;
+    const matchName =
+      row.dataset.name.toLowerCase().includes(search);
+
+    row.style.display =
+      matchCategory && matchName ? "" : "none";
+
+    const editRow = row.nextElementSibling;
+    if (editRow && !matchCategory) {
+      editRow.style.display = "none";
+    }
+  });
+}
+
+function resetFilter() {
+  document.getElementById("category").value = "전체";
+  document.getElementById("search").value = "";
+  filterMenus();
+}
+
+function toggleEdit(id) {
+  const row = document.getElementById("edit-" + id);
+  row.style.display =
+    row.style.display === "table-row" ? "none" : "table-row";
+}
+</script>
+
+</body>
+</html>
+
